@@ -38,7 +38,6 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("com.ninja-squad:springmockk:4.0.2")
 	testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
-	testImplementation("io.projectreactor:reactor-test")
 	testImplementation("org.springframework.security:spring-security-test")
 
 	// swaager
