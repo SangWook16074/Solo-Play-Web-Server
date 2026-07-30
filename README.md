@@ -101,23 +101,24 @@ Swagger UI는 애플리케이션 실행 후 `/swagger-ui/index.html`에서 확�
 | Security | Spring Security, JWT, BCrypt | 인증·인가와 비밀번호 암호화 |
 | External API | WebClient, Kakao Local API, Gemini API | 장소 수집과 콘텐츠 보강 |
 | Mail | Spring Mail, Thymeleaf, Gmail SMTP | HTML 인증 메일 발송 |
-| Test | Kotest, MockK, MockWebServer, WebTestClient | 서비스·외부 API·Controller 검증 |
+| Test | Kotest, MockK, coroutine-test, StepVerifier, MockWebServer, WebTestClient, JaCoCo | Coroutine·Reactive·외부 API·HTTP 계약과 커버리지 검증 |
 | Infra | Docker, Docker Compose, GitHub Actions, AWS EC2 | 이미지 빌드와 서버 배포 |
 
 ## 테스트
 
-외부 API는 실제 네트워크 대신 MockWebServer로 요청 경로·헤더·성공·오류 응답을 검증합니다. 서비스 계층은 MockK로 저장소와 외부 의존성을 분리하고, Controller는 WebTestClient로 HTTP 상태와 응답 구조를 확인합니다.
+외부 API는 실제 네트워크 대신 localhost MockWebServer로 요청 경로·헤더·성공·오류 응답을 검증합니다. 서비스 계층은 MockK로 저장소와 외부 의존성을 분리하고, Controller는 실제 WebFlux 보안 체인을 적용한 슬라이스 테스트로 HTTP 상태와 응답 구조를 확인합니다.
 
 | 대상 | 주요 검증 |
 | --- | --- |
-| 외부 API·장소 | Kakao 요청·오류 처리, 중복 제외, Gemini 응답 저장·실패 격리 |
-| 가입·인증 | 인증 코드, 가입 증표, 회원가입·로그인·로그아웃, JWT 만료 시간 |
-| HTTP·권한 | 인증 역할에 따른 장소·회원 API 상태와 응답 구조 |
+| 외부 API·장소 | Kakao 요청·상태별 오류, ID 중복·무효 장소 제외, Gemini 응답 저장·실패 격리 |
+| 가입·Redis | 인증 코드·가입 증표 TTL과 원자 소비, 회원가입·로그인·로그아웃, Refresh Token |
+| JWT·보안 | 만료·변조·서명·role 복원, Bearer 필터와 Reactive SecurityContext |
+| HTTP·권한 | validation 필드 오류, 비즈니스 예외, 인증 역할에 따른 장소·회원 API 계약 |
 
-현재 `develop` 기준 전체 31개 테스트가 통과합니다.
+현재 `develop` 기준 전체 99개 테스트가 통과합니다. JaCoCo는 custom exclusion 없이 전체 프로덕션 코드를 측정하며 LINE 87%, BRANCH 73% ratchet을 `check`에 적용합니다. 최초·최종 covered/missed 수치는 [커버리지 기준선 문서](docs/testing/coverage-baseline.md)에서 확인할 수 있습니다.
 
 ```bash
-./gradlew test --no-daemon
+./gradlew clean check --no-daemon
 ```
 
 ## 로컬 실행
@@ -156,7 +157,7 @@ Swagger UI는 애플리케이션 실행 후 `/swagger-ui/index.html`에서 확�
 
 `develop` 브랜치 변경 시 두 GitHub Actions Workflow가 독립적으로 실행됩니다.
 
-- `test-cicd.yml`: JDK 21 환경에서 `./gradlew test` 실행
+- `test-cicd.yml`: JDK 21 환경에서 `./gradlew clean check --no-daemon`으로 테스트와 커버리지 gate 실행
 - `deploy-dev.yml`: 애플리케이션과 Docker 이미지를 빌드해 DockerHub에 올리고, EC2에서 Docker Compose로 갱신
 
 배포 Workflow는 테스트를 실행하지 않으므로 테스트 성공이 배포의 선행 조건으로 연결되지는 않습니다.
