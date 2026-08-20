@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">SoloPlay 장소 수집과 Gemini 콘텐츠 보강 흐름</title>
+  <desc id="desc">Kakao Local API 장소를 정규화하고 중복을 제거해 MongoDB에 원본을 먼저 저장한 뒤 별도 Coroutine에서 Gemini 소개와 태그를 요청하며 실패하면 원본 값을 유지하는 흐름</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#2563EB" />
+    </marker>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#64748B" />
+    </marker>
+    <style>
+      text { font-family: Inter, Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif; }
+      .label { font-size: 16px; font-weight: 600; letter-spacing: 0.08em; fill: #2563EB; }
+      .title { font-size: 34px; font-weight: 700; fill: #0F172A; }
+      .body { font-size: 16px; font-weight: 400; fill: #475569; }
+      .step-no { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, monospace; font-size: 15px; font-weight: 700; fill: #2563EB; }
+      .step-title { font-size: 18px; font-weight: 700; fill: #0F172A; }
+      .step-copy { font-size: 14px; font-weight: 400; fill: #475569; }
+      .branch-title { font-size: 18px; font-weight: 700; fill: #0F172A; }
+      .branch-copy { font-size: 14px; font-weight: 400; fill: #475569; }
+      .success { font-size: 18px; font-weight: 700; fill: #047857; }
+      .foot { font-size: 14px; font-weight: 500; fill: #475569; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="#FFFFFF" />
+  <text class="label" x="90" y="76">SOLOPLAY · PLACE INGESTION</text>
+  <text class="title" x="90" y="122">원본을 먼저 저장하고, AI 보강 실패를 격리했습니다</text>
+  <text class="body" x="90" y="154">장소 수집의 성공 여부가 Gemini 응답에 의존하지 않도록 저장과 보강을 분리했습니다.</text>
+  <path d="M90 182 H1110" stroke="#E2E8F0" stroke-width="2" />
+
+  <path d="M286 290 H316" stroke="#2563EB" stroke-width="3" marker-end="url(#arrow)" />
+  <path d="M512 290 H542" stroke="#2563EB" stroke-width="3" marker-end="url(#arrow)" />
+  <path d="M738 290 H768" stroke="#2563EB" stroke-width="3" marker-end="url(#arrow)" />
+
+  <g transform="translate(90 220)">
+    <path d="M0 0 H196 V140 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">01</text>
+    <text class="step-title" x="16" y="62">Kakao 장소 검색</text>
+    <text class="step-copy" x="16" y="94">키워드·페이지 요청</text>
+    <text class="step-copy" x="16" y="118">응답 최대 15개</text>
+  </g>
+  <g transform="translate(316 220)">
+    <path d="M0 0 H196 V140 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">02</text>
+    <text class="step-title" x="16" y="62">정규화·필터</text>
+    <text class="step-copy" x="16" y="94">자치구·카테고리 변환</text>
+    <text class="step-copy" x="16" y="118">매핑 불가 장소 제외</text>
+  </g>
+  <g transform="translate(542 220)">
+    <path d="M0 0 H196 V140 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">03</text>
+    <text class="step-title" x="16" y="62">ID 중복 제거</text>
+    <text class="step-copy" x="16" y="94">응답 내 distinctBy</text>
+    <text class="step-copy" x="16" y="118">사전 조회 + unique index</text>
+  </g>
+  <g transform="translate(768 220)">
+    <path d="M0 0 H342 V140 H0" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">04</text>
+    <text class="step-title" x="16" y="62">MongoDB에 원본 먼저 저장</text>
+    <text class="step-copy" x="16" y="94">displayTitle = placeName</text>
+    <text class="step-copy" x="16" y="118">displayTags = []</text>
+  </g>
+
+  <path d="M939 360 V406 H344" stroke="#2563EB" stroke-width="3" fill="none" marker-end="url(#arrow)" />
+  <g transform="translate(90 406)">
+    <text class="label" x="0" y="28">AFTER SAVE</text>
+    <text class="branch-title" x="0" y="60">별도 Coroutine에서 콘텐츠 보강</text>
+    <text class="branch-copy" x="0" y="88">장소 이름·카테고리·주소로 Gemini JSON 요청</text>
+  </g>
+
+  <path d="M516 456 H602" stroke="#2563EB" stroke-width="3" marker-end="url(#arrow)" />
+  <path d="M720 456 C770 456 770 425 820 425" stroke="#10B981" stroke-width="3" fill="none" marker-end="url(#arrow)" />
+  <path d="M720 456 C770 456 770 503 820 503" stroke="#64748B" stroke-width="2" stroke-dasharray="7 7" fill="none" marker-end="url(#arrow-slate)" />
+
+  <g transform="translate(602 408)">
+    <path d="M0 0 H118 V96 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-title" x="16" y="38">Gemini</text>
+    <text class="step-copy" x="16" y="66">호출·파싱</text>
+  </g>
+  <g transform="translate(820 386)">
+    <circle cx="12" cy="39" r="7" fill="#10B981" />
+    <text class="success" x="32" y="45">성공 · display 필드 갱신</text>
+  </g>
+  <g transform="translate(820 472)">
+    <circle cx="12" cy="29" r="7" fill="#94A3B8" />
+    <text class="branch-title" x="32" y="35">실패 · 저장된 원본 유지</text>
+    <text class="branch-copy" x="32" y="61">재시도 없음 · 수집 결과는 보존</text>
+  </g>
+
+  <path d="M90 556 H1110" stroke="#E2E8F0" stroke-width="2" />
+  <text class="label" x="90" y="598">PROMPT CONTRACT, NOT OUTPUT VALIDATION</text>
+  <text class="foot" x="90" y="630">‘15자 내외 소개’와 ‘태그 3–5개’는 프롬프트 요청 형식이며, 현재 길이·개수를 별도로 검증하지 않습니다.</text>
+</svg>

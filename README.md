@@ -20,13 +20,14 @@ SoloPlay는 혼자 시간을 보내는 사용자가 새로운 활동 장소를 �
 
 `GET /api/places`는 키워드와 페이지를 받아 Kakao Local API에서 최대 15개 장소를 조회합니다. 주소의 자치구와 Kakao 카테고리를 서비스 값으로 정규화하고, 매핑할 수 없는 데이터는 제외합니다.
 
-신규 장소는 Gemini 호출 전에 MongoDB에 저장합니다. 이후 별도 Coroutine이 장소 이름·카테고리·주소를 바탕으로 약 15자의 한글 소개와 해시태그 3–5개를 생성해 `displayTitle`, `displayTags`에 반영합니다.
+신규 장소는 Gemini 호출 전에 MongoDB에 저장합니다. 이후 별도 Coroutine이 장소 이름·카테고리·주소를 바탕으로 한글 소개와 해시태그 생성을 요청해 `displayTitle`, `displayTags`에 반영합니다. 호출이나 응답 파싱이 실패하면 먼저 저장한 장소 이름과 빈 태그 목록을 그대로 유지합니다.
 
 ### 설계 결정
 
 - Kakao 장소 ID 사전 조회와 `kakaoPlaceId` 고유 인덱스를 함께 사용해 반복 수집을 방지합니다.
 - 원본 저장과 AI 보강을 분리해 Gemini 호출·파싱 실패가 수집 데이터에 영향을 주지 않게 했습니다.
 - Gemini는 추천 순위가 아니라 사용자에게 노출할 소개와 태그만 생성합니다.
+- 소개 `15자 내외`와 태그 `3–5개`는 프롬프트 요청 형식이며, 현재 응답의 길이·개수를 별도로 검증하지 않습니다.
 
 ## 일회성 가입 증표를 이용한 회원가입
 
@@ -40,27 +41,9 @@ SoloPlay는 혼자 시간을 보내는 사용자가 새로운 활동 장소를 �
 
 ## 장소 데이터 처리 흐름
 
-```mermaid
-sequenceDiagram
-    actor Client as 인증된 호출자
-    participant API as SoloPlay API
-    participant Kakao as Kakao Local API
-    participant Mongo as MongoDB
-    participant Gemini as Gemini API
-
-    Client->>API: GET /api/places?keyword&page
-    API->>Kakao: 키워드 장소 검색
-    Kakao-->>API: 장소 목록(최대 15개)
-    loop 검색된 장소
-        API->>Mongo: Kakao 장소 ID 조회
-        API->>API: 주소·카테고리 정규화
-    end
-    API->>Mongo: 신규 장소 일괄 저장
-    API-->>Client: 신규 저장 건수
-    API-)Gemini: 장소 소개·태그 생성 요청
-    Gemini-->>API: JSON 응답
-    API->>Mongo: displayTitle·displayTags 갱신
-```
+<p align="center">
+  <img src="./docs/assets/portfolio/soloplay-place-enrichment-flow.svg" width="900" alt="Kakao 장소를 정규화하고 MongoDB에 원본을 먼저 저장한 뒤 Gemini 콘텐츠 보강을 분리하는 흐름" />
+</p>
 
 ## 관련 코드
 
